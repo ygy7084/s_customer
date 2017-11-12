@@ -1,76 +1,54 @@
 import express from 'express';
+import passport from 'passport';
+const Strategy = require('passport-http-bearer').Strategy;
+import fetch from 'isomorphic-fetch';
+import promise from 'es6-promise';
+import socket from '../server';
+promise.polyfill();
 
 import {
   Order,
 } from '../models';
 
 const router = express.Router();
-/*
-  shop: {
-    id: {type: Schema.Types.ObjectId, ref: 'shop'},
-    name: String,
-  },
-  products:[
-    {
-      name: String,
-      id : {type: Schema.Types.ObjectId, ref: 'product'},
-      price: Number,
-      options: [
-        {
-          name: String,
-          amount: Number,
-        }
-      ]
-    }
-  ],
-  customer:{
-    id : {type: Schema.Types.ObjectId, ref:'customer'},
-    name: String,
-    phone: String,
-  },
-  nfc:{
-    id : {type: Schema.Types.ObjectId, ref:'nfc'},
-    name: String,
-  },
-  place: String,
-  orderedWay: String,
-  datetime : Date,
-  payment: [
-    {
-      name:String,
-      value: Number,
-    }
-  ],
-  message: String,
-  status: Number,
- */
-
 //주문 생성
-router.post('/', (req, res) => {
-  const orderTemp = {
-    shop: req.body.data.shop,
-    products : req.body.data.products,
-    customer : req.body.data.customer,
-    nfc : req.body.data.nfc,
-    place : req.body.data.place,
-    orderedWay : req.body.data.place,
-    datetime : req.body.data.datetime,
-    payment : req.body.data.payment,
-    message : req.body.data.message,
-    status : req.body.data.status,
-  };
-
-  const order = new Order(orderTemp);
-  order.save((err,result) => {
-    if(err){
-      return res.status(500).json({ message : '주문 생성 오류:'});
-    }
-    return res.json({
-      data: result,
-    });
+router.post('/', (req, resp) => {
+  const order = new Order({
+    datetime: new Date(),
+    orderList: req.body.data.selected,
+    label: req.body.data.text,
   });
-
-  return null;
+  order.save((err, result) => {
+    if (err) {
+      return resp.status(500).json({
+        message: '에러',
+        error: err,
+      });
+    }
+    resp.cookie('order', String(result._id), { expires: new Date(Date.now() + 90000000),signed: false });
+    return fetch('http://localhost:4001/api/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data: result,
+      }),
+    })
+      .then((res) => {
+        if (res.ok) { return res.json(); }
+        return res.json().then((error) => {
+          throw error;
+        });
+      })
+      .then((res) => {
+        return resp.json({
+          data: result._id,
+        });
+      });
+  });
+});
+router.post('/delivered', (req, res) => {
+  socket.emit('delivered', req.body.data._id);
+  return res.json({ data: true });
 });
 
 //order 리스트 조회
@@ -87,7 +65,8 @@ router.get('/', (req, res) => {
 });
 
 //order 단일 조회
-router.get('/:_id', (req, res) => {
+router.get('/:_id',
+  (req, res) => {
   Order.findOne({ _id: req.params._id })
     .lean()
     .exec((err, result) => {

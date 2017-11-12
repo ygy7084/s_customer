@@ -9,6 +9,8 @@ import MongoConnect from 'connect-mongo';
 import cors from 'cors';
 import configure from './configure';
 import { Account } from './models';
+import http from 'http';
+import socket from 'socket.io';
 
 // 서버사이드 ajax를 위한 fetch
 import 'isomorphic-fetch';
@@ -22,21 +24,7 @@ import auth from './auth';
 const app = express();
 const port = configure.PORT;
 
-// 정적 파일 라우트 (CORS 밑에 두면 안된다 - 일반적으로 브라우저로 조회하기 때문)
 app.use('/', express.static(path.join(__dirname, './../public')));
-
-const whitelist = ['http://localhost:3000', 'http://localhost', 'http://172.30.1.32:3000'];
-const corsOptions = {
-  origin(origin, callback) {
-    if (whitelist.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-};
-app.use(cors(corsOptions));
 
 // 몽고디비 연결 설정
 const db = mongoose.connection;
@@ -69,25 +57,12 @@ db.once('open', () => {
   });
 });
 
-// 쿠키 사용
-app.use(cookieParser());
 // POST 연결을 위한 설정
 app.use(bodyParser.urlencoded({ extended: true, limit: '5mb' }));
 app.use(bodyParser.json({ limit: '5mb' }));
 app.enable('trust proxy');
 
-const MongoStore = MongoConnect(session);
-const sessionConfig = {
-  secret: configure.SECRET,
-  resave: false,
-  saveUninitialized: true,
-  store: new MongoStore({ mongooseConnection: mongoose.connection }),
-};
-app.use(session(sessionConfig));
-app.use(passport.initialize());
-app.use(passport.session());
-
-app.use(auth);
+app.use('/auth', auth);
 
 // API 라우트
 app.use('/api', api);
@@ -98,9 +73,16 @@ app.use((req, res) => {
 });
 
 // 서버 시작
-app.listen(port, () => {
+const httpApp = http.Server(app);
+const io = socket(httpApp);
+io.on('connection', (socket) => {
+
+});
+httpApp.listen(port, () => {
   console.log(`Server is listening on this port : ${port}`);
 });
+export default io;
+
 
 
 
