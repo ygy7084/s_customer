@@ -46,6 +46,42 @@ router.post('/', (req, resp) => {
       });
   });
 });
+
+router.post('/cancel', (req, resp) => {
+  if(!req.body.data._id){
+    return resp.status(500).json({ message : '주문 수정 오류: _id가 전송되지 않았습니다.'});
+  }
+
+  Order.findOneAndUpdate(
+    { _id : req.body.data._id },
+    { delivered: { $set: true } },
+    (err, result) => {
+      if(err) {
+        return resp.status(500).json({ message: "주문 수정 오류 "});
+      }
+      return fetch('http://localhost:4001/api/order/canceled', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: { _id: req.body.data._id },
+        }),
+      })
+        .then((res) => {
+          if (res.ok) { return res.json(); }
+          return res.json().then((error) => {
+            throw error;
+          });
+        })
+        .then((res) => {
+          return resp.json({
+            data: result,
+          });
+        });
+    },
+  );
+  return null;
+});
+
 router.post('/delivered', (req, res) => {
   socket.emit('delivered', req.body.data._id);
   return res.json({ data: true });
