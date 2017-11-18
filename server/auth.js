@@ -33,7 +33,7 @@ router.get('/',
   if (!req.user) {
     return res.status(400).json({ message: '로그인하십시요.', behavior: 'redirectToLogin' });
   }
-  if (req.user.delivered) {
+  if (req.user.status) {
     res.clearCookie('order');
     return res.status(401).end();
   } else {

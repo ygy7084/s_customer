@@ -15,8 +15,9 @@ const router = express.Router();
 router.post('/', (req, resp) => {
   const order = new Order({
     datetime: new Date(),
-    orderList: req.body.data.selected,
+    products: req.body.data.selected,
     label: req.body.data.text,
+    status : 0,
   });
   order.save((err, result) => {
     if (err) {
@@ -54,7 +55,7 @@ router.post('/cancel', (req, resp) => {
 
   Order.findOneAndUpdate(
     { _id : req.body.data._id },
-    { delivered: { $set: true } },
+    { $set: {"status" : 2} },
     (err, result) => {
       if(err) {
         return resp.status(500).json({ message: "주문 수정 오류 "});
