@@ -51,13 +51,25 @@ router.get('/insert/:name', (req, res) => {
   return null;
 });
 
-
 //product 리스트 조회
 router.get('/', (req, res) => {
   Product.find({})
     .exec((err, result) => {
       if(err){
         return res.status(500).json({ message : "상품 리스트 조회 오류 "});
+      }
+      return res.json({
+        data: result,
+      });
+    });
+});
+//상품 반환
+router.get('/:_id', (req, res) => {
+  Product.findOne({ _id: req.params._id })
+    .lean()
+    .exec((err, result) => {
+      if(err) {
+        return res.status(500).json({ message: '상품 조회 오류'});
       }
       return res.json({
         data: result,
