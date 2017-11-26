@@ -4,30 +4,32 @@ const Strategy = require('passport-http-bearer').Strategy;
 import fetch from 'isomorphic-fetch';
 import promise from 'es6-promise';
 import socket from '../server';
-promise.polyfill();
-
+import configure from '../configure';
 import {
   Order,
 } from '../models';
 
 const router = express.Router();
+promise.polyfill();
+
 //주문 생성
-router.post('/', (req, resp) => {
+router.post('/', (req, res) => {
   const order = new Order({
     datetime: new Date(),
-    products: req.body.data.selected,
+    shop: req.body.data.shop,
+    products: req.body.data.products,
     label: req.body.data.text,
     status : 0,
   });
   order.save((err, result) => {
     if (err) {
-      return resp.status(500).json({
+      return res.status(500).json({
         message: '에러',
         error: err,
       });
     }
-    resp.cookie('order', String(result._id), { expires: new Date(Date.now() + 90000000),signed: false });
-    return fetch('http://localhost:4001/api/order', {
+    res.cookie('order', String(result._id), { expires: new Date(Date.now() + 90000000),signed: false });
+    return fetch(`${configure.SHOP_URL}/api/order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -41,26 +43,28 @@ router.post('/', (req, resp) => {
         });
       })
       .then((res) => {
-        return resp.json({
+        return res.json({
           data: result._id,
         });
+      })
+      .catch((e) => {
+        return res.status(500).json({ message: '매장 서버와 연결이 안됩니다.' });
       });
   });
 });
 
-router.post('/cancel', (req, resp) => {
+router.post('/cancel', (req, res) => {
   if(!req.body.data._id){
-    return resp.status(500).json({ message : '주문 수정 오류: _id가 전송되지 않았습니다.'});
+    return res.status(500).json({ message : '주문 수정 오류: _id가 전송되지 않았습니다.'});
   }
-
   Order.findOneAndUpdate(
     { _id : req.body.data._id },
     { $set: {"status" : 2} },
     (err, result) => {
       if(err) {
-        return resp.status(500).json({ message: "주문 수정 오류 "});
+        return res.status(500).json({ message: "주문 수정 오류 "});
       }
-      return fetch('http://localhost:4001/api/order/canceled', {
+      return fetch((`${configure.SHOP_URL}/api/order/canceled`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -74,7 +78,7 @@ router.post('/cancel', (req, resp) => {
           });
         })
         .then((res) => {
-          return resp.json({
+          return res.json({
             data: result,
           });
         });

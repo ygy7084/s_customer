@@ -10,12 +10,14 @@ const config_key = [
   'MONGO_URL',
   'PORT',
   'SECRET',
+  'SHOP_URL',
 ];
 
 // 환경설정 입력할 객체
 const configuration = {
   MONGO_URL: '',
   PORT: '',
+  SHOP_URL: '',
 };
 
 // 위의 객체에 환경설정 입력
