@@ -27,7 +27,6 @@ router.post('/', (req, res) => {
         error: err,
       });
     }
-    res.cookie('order', String(result._id), { expires: new Date(Date.now() + 90000000), signed: false });
     return fetch(`${configure.SHOP_URL}/api/order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -35,13 +34,14 @@ router.post('/', (req, res) => {
         data: result,
       }),
     })
-      .then((res) => {
-        if (res.ok) { return res.json(); }
+      .then((res2) => {
+        if (res2.ok) { return res2.json(); }
+        res.cookie('order', String(result._id), { expires: new Date(Date.now() + 90000000), signed: false });
         return res.json().then((error) => {
           throw error;
         });
       })
-      .then((resp) => {
+      .then((res2) => {
         return res.json({
           data: result._id,
         });
