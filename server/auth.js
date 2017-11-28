@@ -7,12 +7,14 @@ const router = express.Router();
 
 passport.use(new Strategy(
   function(token, cb) {
-    Order.findOne({ _id: token }).lean().exec((err, result) => {
+    Order.findOne({ _id: token }).populate('shop._id').lean().exec((err, result) => {
+      const r = result;
+      r.shop = r.shop._id;
       if (err) {
         return cb(null, false);
       }
       if (!result) { return cb(null, false); }
-      return cb(null, result);
+      return cb(null, r);
     });
   }));
 // [END setup]
@@ -35,7 +37,7 @@ router.get('/',
   }
   if (req.user.status) {
     res.clearCookie('order');
-    return res.status(401).end();
+    return res.json({ data: req.user });
   } else {
     return res.json({ data: req.user });
   }

@@ -1,16 +1,13 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import cookieParser from 'cookie-parser';
-import session from 'express-session';
-import passport from 'passport';
 import path from 'path';
 import mongoose from 'mongoose';
-import MongoConnect from 'connect-mongo';
-import cors from 'cors';
 import configure from './configure';
 import { Account } from './models';
 import http from 'http';
 import socket from 'socket.io';
+import proxy from 'express-http-proxy';
+import url from 'url';
 
 // 서버사이드 ajax를 위한 fetch
 import 'isomorphic-fetch';
@@ -24,6 +21,11 @@ import auth from './auth';
 const app = express();
 const port = configure.PORT;
 
+app.use('/img', proxy('localhost:8080', {
+  proxyReqPathResolver: function(req) {
+    return '/img/'+url.parse(req.url).path;
+  }
+}));
 app.use('/', express.static(path.join(__dirname, './../public')));
 
 // 몽고디비 연결 설정
@@ -66,6 +68,10 @@ app.use('/auth', auth);
 
 // API 라우트
 app.use('/api', api);
+
+app.get('/*', function (req, res) {
+  res.sendFile(path.join(__dirname, './../public', 'index.html'));
+});
 
 // 404 에러
 app.use((req, res) => {

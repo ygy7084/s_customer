@@ -23,7 +23,7 @@ const Order = new Schema({
           ],
         },
       ],
-    }
+    },
   ],
   wholePrice: Number,
   customer: {

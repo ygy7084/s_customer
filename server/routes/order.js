@@ -17,6 +17,7 @@ router.post('/', (req, res) => {
     shop: req.body.data.shop,
     products: req.body.data.products,
     label: req.body.data.text,
+    wholePrice: req.body.data.wholePrice,
     status : 0,
   });
   order.save((err, result) => {
@@ -143,6 +144,23 @@ router.put('/', (req, res) => {
       update.$set[property] = req.body.data[property];
     }
   }
+
+  // calculating wholePrice
+  let wholePrice = 0;
+  const products = req.body.data.products;
+  products.forEach((product) => {
+    let base = product.price;
+    if (product.options && product.options.length) {
+      product.options.forEach((option) => {
+        option.selections.forEach((selection) => {
+          base += selection.price;
+        });
+      });
+    }
+    wholePrice += base * product.number;
+  });
+  update.$set['wholePrice'] = wholePrice;
+
   Order.findOneAndUpdate(
     { _id : req.body.data._id },
     update,
