@@ -9,7 +9,9 @@ passport.use(new Strategy(
   function(token, cb) {
     Order.findOne({ _id: token }).populate('shop._id').lean().exec((err, result) => {
       const r = result;
-      r.shop = r.shop._id;
+      if (r) {
+        r.shop = r.shop._id;
+      }
       if (err) {
         return cb(null, false);
       }
