@@ -2,7 +2,6 @@ import express from 'express';
 import passport from 'passport';
 const Strategy = require('passport-http-bearer').Strategy;
 import fetch from 'isomorphic-fetch';
-import promise from 'es6-promise';
 import socket from '../server';
 import configure from '../configure';
 import {
@@ -10,7 +9,6 @@ import {
 } from '../models';
 
 const router = express.Router();
-promise.polyfill();
 
 //주문 생성
 router.post('/', (req, res) => {
@@ -28,7 +26,7 @@ router.post('/', (req, res) => {
         error: err,
       });
     }
-    res.cookie('order', String(result._id), { expires: new Date(Date.now() + 90000000),signed: false });
+    res.cookie('order', String(result._id), { expires: new Date(Date.now() + 90000000), signed: false });
     return fetch(`${configure.SHOP_URL}/api/order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -42,13 +40,14 @@ router.post('/', (req, res) => {
           throw error;
         });
       })
-      .then((res) => {
+      .then((resp) => {
         return res.json({
           data: result._id,
         });
       })
       .catch((e) => {
-        return res.status(500).json({ message: '매장 서버와 연결이 안됩니다.' });
+        console.error(e);
+        return res.status(500).json({ message: '매장 서버와 연결이 안됩니다.', error: e, });
       });
   });
 });
@@ -64,7 +63,7 @@ router.post('/cancel', (req, res) => {
       if(err) {
         return res.status(500).json({ message: "주문 수정 오류 "});
       }
-      return fetch((`${configure.SHOP_URL}/api/order/canceled`, {
+      return fetch(`${configure.SHOP_URL}/api/order/canceled`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
