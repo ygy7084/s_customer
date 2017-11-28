@@ -36,12 +36,12 @@ router.post('/', (req, res) => {
     })
       .then((res2) => {
         if (res2.ok) { return res2.json(); }
-        res.cookie('order', String(result._id), { expires: new Date(Date.now() + 90000000), signed: false });
         return res.json().then((error) => {
           throw error;
         });
       })
       .then((res2) => {
+        res.cookie('order', String(result._id), { expires: new Date(Date.now() + 90000000), signed: false });
         return res.json({
           data: result._id,
         });
