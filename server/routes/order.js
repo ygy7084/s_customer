@@ -1,6 +1,4 @@
 import express from 'express';
-import passport from 'passport';
-const Strategy = require('passport-http-bearer').Strategy;
 import fetch from 'isomorphic-fetch';
 import socket from '../server';
 import configure from '../configure';
@@ -15,6 +13,9 @@ router.post('/', (req, res) => {
   const order = new Order({
     datetime: new Date(),
     shop: req.body.data.shop,
+    customer : req.body.data.customer,
+    place : req.body.data.place,
+    nfc: req.body.data.nfc,
     products: req.body.data.products,
     label: req.body.data.text,
     wholePrice: req.body.data.wholePrice,
@@ -41,7 +42,7 @@ router.post('/', (req, res) => {
         });
       })
       .then((res2) => {
-        res.cookie('order', String(result._id), { expires: new Date(Date.now() + 90000000), signed: false });
+        res.cookie('order', String(result._id), { expires: new Date(Date.now() + 9000000000), signed: false });
         return res.json({
           data: result._id,
         });
@@ -175,23 +176,6 @@ router.put('/', (req, res) => {
   );
   return null;
 });
-
-//주문 삭제
-/*
-router.delete('/:_id', (req, res) => {
-  if (!req.params._id) {
-    return res.status(500).json({ message: '주문 삭제 오류: _id가 전송되지 않았습니다.' });
-  }
-  Order.findOneAndRemove(
-    { _id: req.params._id },
-    (err, result) =>
-      res.json({
-        data: result,
-      }),
-  );
-  return null;
-});
-*/
 
 // order 여러개 삭제
 router.delete('/', (req, res) => {

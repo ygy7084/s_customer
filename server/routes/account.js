@@ -44,7 +44,8 @@ router.get('/', (req, res) => {
 
 //계정 단일 조회
 router.get('/:_id', (req, res) => {
-  Account.findOne({ _id: req.params._id }).populate('connectedShop.id')
+  Account.findOne({ _id: req.params._id })
+    .populate('connectedShop.id')
     .lean()
     .exec((err, result) => {
       if(err) {
