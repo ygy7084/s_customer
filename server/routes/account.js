@@ -51,7 +51,6 @@ router.get('/:_id', (req, res) => {
       if(err) {
         return res.status(500).json({ message: '계정 조회 오류'});
       }
-      console.log(result);
       return res.json({
         data: result,
       });
