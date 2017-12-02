@@ -80,23 +80,25 @@ app.use((req, res) => {
 });
 
 // 서버 시작
-//const httpApp = http.Server(app);
-http.createServer(function(req, res) {   
-        res.writeHead(301, {"Location": "https://" + req.headers['host'] + req.url});
-        res.end();
-}).listen(80);
- 
-const httpsApp = https.createServer({
-        key: fs.readFileSync("/etc/letsencrypt/live/mamre.kr/privkey.pem"),
-        cert: fs.readFileSync("/etc/letsencrypt/live/mamre.kr/fullchain.pem"),
-        ca: fs.readFileSync("/etc/letsencrypt/live/mamre.kr/chain.pem")
-}, app);
+let server;
+if (process.env.HTTPS === 'true') {
+  http.createServer(function (req, res) {
+    res.writeHead(301, {"Location": "https://" + req.headers['host'] + req.url});
+    res.end();
+  }).listen(80);
 
-const io = socket(httpsApp);
-io.on('connection', (socket) => {
+  server = https.createServer({
+    key: fs.readFileSync("/etc/letsencrypt/live/mamre.kr/privkey.pem"),
+    cert: fs.readFileSync("/etc/letsencrypt/live/mamre.kr/fullchain.pem"),
+    ca: fs.readFileSync("/etc/letsencrypt/live/mamre.kr/chain.pem")
+  }, app);
+} else {
+  server = http.Server(app);
+}
 
-});
-httpsApp.listen(port, () => {
+const io = socket(server);
+io.on('connection', (socket) => {});
+server.listen(port, () => {
   console.log(`Server is listening on this port : ${port}`);
 });
 export default io;
