@@ -25,7 +25,7 @@ const configuration = {
   for (let i = 0; i < config_key.length; i++) {
     if (config[config_key[i]]) { configuration[config_key[i]] = config[config_key[i]]; }
   }
-  configuration.PORT = process.env.PORT || 4000;
+  configuration.PORT = process.env.PORT || 443;
   configuration.SECRET = '34k3oa4uunaifu34';
 }());
 

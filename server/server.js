@@ -5,10 +5,11 @@ import mongoose from 'mongoose';
 import configure from './configure';
 import { Account } from './models';
 import http from 'http';
+import https from 'https';
 import socket from 'socket.io';
 import proxy from 'express-http-proxy';
 import url from 'url';
-
+import fs from 'fs';
 // 서버사이드 ajax를 위한 fetch
 import 'isomorphic-fetch';
 
@@ -79,12 +80,23 @@ app.use((req, res) => {
 });
 
 // 서버 시작
-const httpApp = http.Server(app);
-const io = socket(httpApp);
+//const httpApp = http.Server(app);
+http.createServer(function(req, res) {   
+        res.writeHead(301, {"Location": "https://" + req.headers['host'] + req.url});
+        res.end();
+}).listen(80);
+ 
+const httpsApp = https.createServer({
+        key: fs.readFileSync("/etc/letsencrypt/live/mamre.kr/privkey.pem"),
+        cert: fs.readFileSync("/etc/letsencrypt/live/mamre.kr/fullchain.pem"),
+        ca: fs.readFileSync("/etc/letsencrypt/live/mamre.kr/chain.pem")
+}, app);
+
+const io = socket(httpsApp);
 io.on('connection', (socket) => {
 
 });
-httpApp.listen(port, () => {
+httpsApp.listen(port, () => {
   console.log(`Server is listening on this port : ${port}`);
 });
 export default io;
