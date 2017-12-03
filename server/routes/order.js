@@ -1,5 +1,6 @@
 import express from 'express';
 import fetch from 'isomorphic-fetch';
+import webPush from 'web-push';
 import socket from '../server';
 import configure from '../configure';
 import {
@@ -7,6 +8,7 @@ import {
 } from '../models';
 
 const router = express.Router();
+webPush.setGCMAPIKey('AIzaSyAFs9QXNkl6GYUK88GNHVDPYd0-idtPm9E');
 
 //주문 생성
 router.post('/', (req, res) => {
@@ -20,6 +22,8 @@ router.post('/', (req, res) => {
     label: req.body.data.text,
     wholePrice: req.body.data.wholePrice,
     status : 0,
+    endPoint: req.body.data.endPoint,
+    keys: req.body.data.keys,
   });
   order.save((err, result) => {
     if (err) {
@@ -87,10 +91,35 @@ router.post('/cancel', (req, res) => {
   );
   return null;
 });
-
 router.post('/delivered', (req, res) => {
-  socket.emit('delivered', req.body.data._id);
-  return res.json({ data: true });
+  Order.findOne({ _id: req.body.data._id })
+    .lean()
+    .exec((err, result) => {
+      if (err) {
+        return res.status(500).json({ message: 'DB 조회 에러가 있습니다.' });
+      }
+      const { _id, endPoint, keys } = result;
+      socket.emit('delivered', _id);
+      if (endPoint) {
+        webPush.sendNotification({
+          endpoint: endPoint,
+          TTL: 0,
+          keys: {
+            auth: keys.authSecret,
+            p256dh: keys.key,
+          },
+        }, result.customer.phone+"님, 상품 준비가 완료되었습니다.")
+          .then(() => {
+            return res.json({ data: true });
+          })
+          .catch((error) => {
+            console.log(error);
+            return res.json({ data: true });
+          });
+      } else {
+        return res.json({ data: true });
+      }
+    });
 });
 
 //order 리스트 조회

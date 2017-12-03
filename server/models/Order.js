@@ -49,6 +49,11 @@ const Order = new Schema({
   ],
   message: String,
   status: Number,
+  endPoint: String,
+  keys: {
+    key: String,
+    authSecret: String,
+  },
 });
 const model = mongoose.model('order', Order);
 
