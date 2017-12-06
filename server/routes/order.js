@@ -76,17 +76,23 @@ router.post('/cancel', (req, res) => {
           data: { _id: req.body.data._id },
         }),
       })
-        .then((res) => {
-          if (res.ok) { return res.json(); }
-          return res.json().then((error) => {
+        .then((res2) => {
+          if (res2.ok) { return res2.json(); }
+          return res2.json().then((error) => {
             throw error;
           });
         })
-        .then((res) => {
+        .then((res2) => {
           return res.json({
             data: result,
           });
-        });
+        })
+        .catch((e) => {
+          console.error(e);
+          res.status(500).json({
+            message: '데이터 전송에 에러가 있습니다.',
+          });
+        })
     },
   );
   return null;
@@ -108,7 +114,10 @@ router.post('/delivered', (req, res) => {
             auth: keys.authSecret,
             p256dh: keys.key,
           },
-        }, result.customer.phone+"님, 상품 준비가 완료되었습니다.")
+        }, JSON.stringify({
+          message: `${result.customer.phone}님, 상품 준비가 완료되었습니다.`,
+          _id,
+        }))
           .then(() => {
             return res.json({ data: true });
           })
@@ -120,6 +129,45 @@ router.post('/delivered', (req, res) => {
         return res.json({ data: true });
       }
     });
+});
+router.post('/confirmdelivered', (req, res) => {
+  if (!req.body.data._id) {
+    return res.status(500).json({ message: '알림 확인 메세지 전송이 불가합니다.' });
+  }
+  Order.findOneAndUpdate({
+    _id: req.body.data._id,
+  }, {
+    $set: { pushStatus: 2 },
+  }, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: '알림 확인 DB 처리에 에러가 있습니다.' });
+    }
+    return fetch(`${configure.SHOP_URL}/api/order/confirmdelivered`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data: { _id: req.body.data._id },
+      }),
+    })
+      .then((res2) => {
+        if (res2.ok) { return res2.json(); }
+        return res2.json().then((error) => {
+          throw error;
+        });
+      })
+      .then((res2) => {
+        return res.json({
+          data: result,
+        });
+      })
+      .catch((e) => {
+        console.error(e);
+        res.status(500).json({
+          message: '데이터 전송에 에러가 있습니다.',
+        });
+      })
+  });
 });
 
 //order 리스트 조회

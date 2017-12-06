@@ -37,7 +37,7 @@
 /* eslint-disable indent, no-unused-vars, no-multiple-empty-lines, max-nested-callbacks, space-before-function-paren, quotes, comma-spacing */
 'use strict';
 
-var precacheConfig = [["/index.html","e4c9b8e510dc2fce5a3e2d1011c62a02"],["/static/css/main.73d08d19.css","b406abf0fcab0b4ff642fecbb1128421"],["/static/js/main.42af009e.js","6f14454fdd593e12c63e325a4a0fa279"]];
+var precacheConfig = [["/index.html","b9b1694b3e6daf806e172be85d53a3ac"],["/static/css/main.00d30ddd.css","7af8087c15ff9242f8a6a36671b1ea3f"],["/static/js/main.9a02d8f4.js","0ba02de94e2bf7847281f4bfdca23373"]];
 var cacheName = 'sw-precache-v3-sw-precache-webpack-plugin-' + (self.registration ? self.registration.scope : '');
 
 
@@ -233,7 +233,7 @@ self.addEventListener('fetch', function(event) {
     if (!shouldRespond &&
         navigateFallback &&
         (event.request.mode === 'navigate') &&
-        isPathWhitelisted(["^(?!\\/__).*","^(?!\\/api).*"], event.request.url)) {
+        isPathWhitelisted(["^(?!\\/__).*"], event.request.url)) {
       url = new URL(navigateFallback, self.location).toString();
       shouldRespond = urlsToCacheKeys.has(url);
     }

@@ -1,9 +1,45 @@
+/* eslint-disable */
 self.addEventListener('push', function(event) {
-  var payload = event.data ? event.data.text() : 'no payload';
+  const payload = event.data ? JSON.parse(event.data.text()) : 'no payload';
+  let messageStatus = false;
   event.waitUntil(
     self.registration.showNotification('Mamre', {
-      body: payload,
+      body: payload.message,
       icon: 'MamreIcon.PNG',
-      vibrate: [500, 100, 500],
-    }));
+      badge: 'MamreIcon.PNG',
+      vibrate: [500, 500, 500, 500, 500],
+    })
+      .then(() => {
+        messageStatus = true;
+        return fetch('/api/order/confirmdelivered', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: { _id: payload._id },
+          }),
+        })
+      })
+      .catch((e) => {
+        if (!messageStatus) {
+          return fetch('/api/order/confirmdelivered', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              data: { error: true },
+            }),
+          })
+        }
+        console.error(e);
+      })
+  );
+});
+self.addEventListener('notificationclick', function(event) {
+  event.waitUntil(
+    self.clients.matchAll().then(function(clientList) {
+      if (clientList.length) {
+        return clientList[0].focus();
+      }
+      return self.clients.openWindow('/index.html');
+    })
+  )
 });

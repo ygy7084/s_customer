@@ -48,12 +48,13 @@ const Order = new Schema({
     }
   ],
   message: String,
-  status: Number,
+  status: { type: Number, default: 0 },
   endPoint: String,
   keys: {
     key: String,
     authSecret: String,
   },
+  pushStatus: { type: Number, default: 0 },
 });
 const model = mongoose.model('order', Order);
 
