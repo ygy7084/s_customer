@@ -5,8 +5,8 @@ self.addEventListener('push', function(event) {
   event.waitUntil(
     self.registration.showNotification('Mamre', {
       body: payload.message,
-      icon: 'MamreIcon.PNG',
-      badge: 'MamreIcon.PNG',
+      icon: 'mamrePushIcon.png',
+      badge: 'badge.png',
       vibrate: [500, 500, 500, 500, 500],
     })
       .then(() => {
@@ -39,7 +39,7 @@ self.addEventListener('notificationclick', function(event) {
       if (clientList.length) {
         return clientList[0].focus();
       }
-      return self.clients.openWindow('/index.html');
+      return self.clients.openWindow('/order');
     })
   )
 });
