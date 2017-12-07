@@ -266,5 +266,5 @@ self.addEventListener('fetch', function(event) {
 
 
 
-importScripts("/custom-service-worker.js?1512611831812");
+importScripts("/custom-service-worker.js?1512612766159");
 
