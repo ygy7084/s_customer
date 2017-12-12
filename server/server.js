@@ -22,6 +22,7 @@ import auth from './auth';
 const app = express();
 const port = configure.PORT;
 
+// 이미지는 프록시를 통해 serverside로 요청한다.
 app.use('/img', proxy('localhost:8080', {
   proxyReqPathResolver: function(req) {
     return '/img/'+url.parse(req.url).path;

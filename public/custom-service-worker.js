@@ -36,6 +36,7 @@ self.addEventListener('push', function(event) {
 self.addEventListener('notificationclick', function(event) {
   event.waitUntil(
     self.clients.matchAll().then(function(clientList) {
+      event.notification.close();
       if (clientList.length) {
         return clientList[0].focus();
       }

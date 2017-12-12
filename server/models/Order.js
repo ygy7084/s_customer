@@ -49,7 +49,7 @@ const Order = new Schema({
   ],
   message: String,
   status: { type: Number, default: 0 },
-  endPoint: String,
+  endpoint: String,
   keys: {
     key: String,
     authSecret: String,

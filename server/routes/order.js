@@ -1,6 +1,6 @@
 import express from 'express';
 import fetch from 'isomorphic-fetch';
-import webPush from 'web-push';
+import passport from 'passport';
 import socket from '../server';
 import configure from '../configure';
 import {
@@ -8,7 +8,6 @@ import {
 } from '../models';
 
 const router = express.Router();
-webPush.setGCMAPIKey('AIzaSyAFs9QXNkl6GYUK88GNHVDPYd0-idtPm9E');
 
 //주문 생성
 router.post('/', (req, res) => {
@@ -22,7 +21,7 @@ router.post('/', (req, res) => {
     label: req.body.data.text,
     wholePrice: req.body.data.wholePrice,
     status : 0,
-    endPoint: req.body.data.endPoint,
+    endpoint: req.body.data.endpoint,
     keys: req.body.data.keys,
   });
   order.save((err, result) => {
@@ -46,7 +45,6 @@ router.post('/', (req, res) => {
         });
       })
       .then((res2) => {
-        res.cookie('order', String(result._id), { expires: new Date(Date.now() + 9000000000), signed: false });
         return res.json({
           data: result._id,
         });
@@ -58,6 +56,7 @@ router.post('/', (req, res) => {
   });
 });
 
+// 취소 요청 - 향후 구현
 router.post('/cancel', (req, res) => {
   if(!req.body.data._id){
     return res.status(500).json({ message : '주문 수정 오류: _id가 전송되지 않았습니다.'});
@@ -97,6 +96,21 @@ router.post('/cancel', (req, res) => {
   );
   return null;
 });
+router.post('/canceled', (req, res) => {
+  Order.findOne({ _id: req.body.data._id })
+    .lean()
+    .exec((err, result) => {
+      if (err) {
+        return res.status(500).json({ message: 'DB 조회 에러가 있습니다.' });
+      }
+      const { _id, } = result;
+      socket.emit('orderStatusChange', {
+        _id,
+        status: 2,
+      });
+      return res.json({ data: true });
+    });
+});
 router.post('/delivered', (req, res) => {
   Order.findOne({ _id: req.body.data._id })
     .lean()
@@ -104,32 +118,15 @@ router.post('/delivered', (req, res) => {
       if (err) {
         return res.status(500).json({ message: 'DB 조회 에러가 있습니다.' });
       }
-      const { _id, endPoint, keys } = result;
-      socket.emit('delivered', _id);
-      if (endPoint) {
-        webPush.sendNotification({
-          endpoint: endPoint,
-          TTL: 0,
-          keys: {
-            auth: keys.authSecret,
-            p256dh: keys.key,
-          },
-        }, JSON.stringify({
-          message: `${result.customer.phone}님, 상품 준비가 완료되었습니다.`,
-          _id,
-        }))
-          .then(() => {
-            return res.json({ data: true });
-          })
-          .catch((error) => {
-            console.log(error);
-            return res.json({ data: true });
-          });
-      } else {
-        return res.json({ data: true });
-      }
+      const { _id, } = result;
+      socket.emit('orderStatusChange', {
+        _id,
+        status: 1,
+      });
+      return res.json({ data: true });
     });
 });
+// 아마 필요 없을 수 있다.
 router.post('/confirmdelivered', (req, res) => {
   if (!req.body.data._id) {
     return res.status(500).json({ message: '알림 확인 메세지 전송이 불가합니다.' });
@@ -169,35 +166,41 @@ router.post('/confirmdelivered', (req, res) => {
       })
   });
 });
-
 //order 리스트 조회
-router.get('/', (req, res) => {
-  Order.find({})
-    .exec((err, result) => {
-      if(err){
-        return res.status(500).json({ message : "주문 리스트 조회 오류 "});
-      }
-      return res.json({
-        data: result,
+router.get('/customerordered',
+  passport.authenticate('bearer', { session: false }),
+  (req, res) => {
+    if (!req.user) {
+      res.clearCookie('customer');
+      return res.status(400).json({ message: '저장된 고객 정보가 없습니다.' });
+    }
+    Order.find({
+      'customer._id': req.user._id,
+    })
+      .sort({ _id: -1 })
+      .exec((err, result) => {
+        if(err){
+          return res.status(500).json({ message : "주문 리스트 조회 오류 "});
+        }
+        return res.json({
+          data: result,
+        });
       });
-    });
 });
-
 //order 단일 조회
 router.get('/:_id',
   (req, res) => {
-  Order.findOne({ _id: req.params._id })
-    .lean()
-    .exec((err, result) => {
-      if(err) {
-        return res.status(500).json({ message: '주문 조회 오류'});
-      }
-      return res.json({
-        data: result,
+    Order.findOne({ _id: req.params._id })
+      .lean()
+      .exec((err, result) => {
+        if(err) {
+          return res.status(500).json({ message: '주문 조회 오류'});
+        }
+        return res.json({
+          data: result,
+        });
       });
-    });
 });
-
 //주문 수정
 router.put('/', (req, res) => {
   if(!req.body.data._id){
