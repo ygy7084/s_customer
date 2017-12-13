@@ -177,13 +177,20 @@ router.get('/customerordered',
     Order.find({
       'customer._id': req.user._id,
     })
+      .populate('shop._id')
       .sort({ _id: -1 })
       .exec((err, result) => {
         if(err){
           return res.status(500).json({ message : "주문 리스트 조회 오류 "});
         }
+        const resultArr = result;
+        resultArr.forEach(o => {
+          if (typeof o.shop._id === 'object') {
+            o.shop = o.shop._id;
+          }
+        });
         return res.json({
-          data: result,
+          data: resultArr,
         });
       });
 });
