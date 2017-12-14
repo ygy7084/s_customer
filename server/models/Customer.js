@@ -26,7 +26,7 @@ const Customer = new Schema({
     },
   ],
 });
-Customer.index({ phone: 1 }, { unique: true });
+Customer.index({ phone: 1 }, { unique: true, sparse: true, });
 const model = mongoose.model('customer', Customer);
 export default model;
 

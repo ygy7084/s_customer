@@ -179,6 +179,7 @@ router.get('/customerordered',
     })
       .populate('shop._id')
       .sort({ _id: -1 })
+      .lean()
       .exec((err, result) => {
         if(err){
           return res.status(500).json({ message : "주문 리스트 조회 오류 "});
